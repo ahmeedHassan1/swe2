@@ -74,6 +74,7 @@ CREATE TABLE payroll (
     present_days INTEGER,
     absent_days INTEGER,
     generated_at TIMESTAMP,
+    processed_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
     UNIQUE(employee_id, month, year)
