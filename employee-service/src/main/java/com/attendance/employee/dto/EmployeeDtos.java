@@ -33,7 +33,7 @@ public class EmployeeDtos {
         
         @NotNull
         @Positive
-        private Double salary;
+        private java.math.BigDecimal salary;
         
         @NotNull
         private Long userId;
@@ -51,7 +51,7 @@ public class EmployeeDtos {
         private String department;
         private String position;
         private LocalDate joinDate;
-        private Double salary;
+        private java.math.BigDecimal salary;
         private LocalDateTime createdAt;
     }
 }

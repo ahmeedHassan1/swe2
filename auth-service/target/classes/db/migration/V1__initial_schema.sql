@@ -68,6 +68,8 @@ CREATE TABLE payroll (
     deductions DECIMAL(10, 2) NOT NULL DEFAULT 0,
     bonuses DECIMAL(10, 2) NOT NULL DEFAULT 0,
     net_salary DECIMAL(10, 2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    payment_date TIMESTAMP,
     working_days INTEGER,
     present_days INTEGER,
     absent_days INTEGER,

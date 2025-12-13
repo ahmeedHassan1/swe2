@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -47,7 +48,7 @@ public class Employee {
     private LocalDate joinDate;
     
     @Column(nullable = false)
-    private Double salary;
+    private BigDecimal salary;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -59,7 +60,7 @@ public class Employee {
     @PrePersist
     @PreUpdate
     private void validateSalary() {
-        if (salary != null && salary <= 0) {
+        if (salary != null && salary.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalStateException("Salary must be positive");
         }
         if (joinDate != null && joinDate.isAfter(LocalDate.now())) {

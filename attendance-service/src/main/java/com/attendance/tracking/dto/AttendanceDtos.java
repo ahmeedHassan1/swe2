@@ -33,7 +33,7 @@ public class AttendanceDtos {
         private LocalDateTime clockOutTime;
         private LocalDate date;
         private AttendanceStatus status;
-        private Double workHours;
+        private java.math.BigDecimal workHours;
         private String notes;
     }
 }

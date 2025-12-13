@@ -35,7 +35,7 @@ public class Attendance {
     private AttendanceStatus status; // PRESENT, ABSENT, LATE, HALF_DAY
 
     @Column(name = "work_hours")
-    private Double workHours;
+    private java.math.BigDecimal workHours;
 
     private String notes;
 
@@ -52,7 +52,7 @@ public class Attendance {
             }
             // Calculate work hours
             Duration duration = Duration.between(clockInTime, clockOutTime);
-            workHours = duration.toMinutes() / 60.0;
+            workHours = java.math.BigDecimal.valueOf(duration.toMinutes() / 60.0);
         }
 
         if (date != null && date.isAfter(LocalDate.now())) {
