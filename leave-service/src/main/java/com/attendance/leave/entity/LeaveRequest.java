@@ -41,8 +41,6 @@ public class LeaveRequest {
 
     // OCL: context LeaveRequest inv: endDate >= startDate
     // OCL: context LeaveRequest inv: status = PENDING implies startDate >= today
-    @PrePersist
-    @PreUpdate
     private void validateDates() {
         if (endDate.isBefore(startDate)) {
             throw new IllegalStateException("End date must be after or equal to start date");
@@ -61,5 +59,11 @@ public class LeaveRequest {
         if (status == null) {
             status = LeaveStatus.PENDING;
         }
+        validateDates();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        validateDates();
     }
 }

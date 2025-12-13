@@ -49,8 +49,6 @@ public class Payroll {
     private LocalDateTime processedAt;
 
     // OCL: context Payroll inv: netSalary = baseSalary + bonuses - deductions
-    @PrePersist
-    @PreUpdate
     private void calculateNetSalary() {
         if (baseSalary != null) {
             BigDecimal bonusVal = bonuses != null ? bonuses : BigDecimal.ZERO;
@@ -65,5 +63,11 @@ public class Payroll {
         if (status == null) {
             status = PayrollStatus.PENDING;
         }
+        calculateNetSalary();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        calculateNetSalary();
     }
 }

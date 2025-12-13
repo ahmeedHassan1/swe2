@@ -56,9 +56,6 @@ public class Employee {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    // OCL: context Employee inv: salary > 0
-    @PrePersist
-    @PreUpdate
     private void validateSalary() {
         if (salary != null && salary.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalStateException("Salary must be positive");
@@ -74,10 +71,12 @@ public class Employee {
         if (employeeId == null) {
             employeeId = "EMP" + System.currentTimeMillis();
         }
+        validateSalary();
     }
     
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+        validateSalary();
     }
 }

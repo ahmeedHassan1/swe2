@@ -43,8 +43,6 @@ public class Attendance {
     private LocalDateTime createdAt;
 
     // OCL: context Attendance inv: clockOutTime > clockInTime
-    @PrePersist
-    @PreUpdate
     private void validateTimes() {
         if (clockOutTime != null && clockInTime != null) {
             if (clockOutTime.isBefore(clockInTime)) {
@@ -66,5 +64,11 @@ public class Attendance {
         if (date == null) {
             date = LocalDate.now();
         }
+        validateTimes();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        validateTimes();
     }
 }
