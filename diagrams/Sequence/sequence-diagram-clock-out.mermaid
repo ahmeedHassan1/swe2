@@ -1,0 +1,55 @@
+---
+title: Sequence Diagram - Employee Clock Out Process
+---
+sequenceDiagram
+    actor Employee
+    participant Frontend
+    participant APIGateway as API Gateway
+    participant AttendanceService as Attendance Service
+    participant Database as Attendance DB
+
+    Employee->>Frontend: Click Clock Out button
+    Frontend->>APIGateway: POST /api/attendance/clock-out<br/>{employeeId, notes}<br/>Authorization: Bearer {token}
+    APIGateway->>APIGateway: Validate JWT token
+    APIGateway->>AttendanceService: Forward request
+    
+    AttendanceService->>Database: SELECT * FROM attendance<br/>WHERE employee_id = ? AND date = today
+    
+    alt No Clock-In Record
+        Database-->>AttendanceService: No record found
+        AttendanceService-->>APIGateway: 400 No clock-in record found
+        APIGateway-->>Frontend: Error response
+        Frontend-->>Employee: Display error:<br/>"No clock-in record found for today"
+    else Record Exists
+        Database-->>AttendanceService: Attendance record
+        
+        alt Already Clocked Out
+            AttendanceService->>AttendanceService: Check if clockOutTime != null
+            AttendanceService-->>APIGateway: 400 Already clocked out
+            APIGateway-->>Frontend: Error response
+            Frontend-->>Employee: Display error:<br/>"Already clocked out today"
+        else Not Clocked Out
+            AttendanceService->>AttendanceService: Set clockOutTime = now()
+            
+            AttendanceService->>AttendanceService: Calculate work hours<br/>duration = clockOut - clockIn
+            AttendanceService->>AttendanceService: workHours = duration in hours<br/>(minutes / 60.0)
+            
+            alt Notes provided
+                AttendanceService->>AttendanceService: Append notes:<br/>existing + " | Out: " + new notes
+            end
+            
+            AttendanceService->>AttendanceService: Validate:<br/>clockOutTime > clockInTime
+            
+            AttendanceService->>Database: UPDATE attendance<br/>SET clock_out_time = ?, work_hours = ?, notes = ?<br/>WHERE id = ?
+            Database-->>AttendanceService: Record updated
+            
+            AttendanceService-->>APIGateway: 200 {id, employeeId, clockInTime,<br/>clockOutTime, workHours, status}
+            APIGateway-->>Frontend: Attendance response
+            
+            Frontend->>Frontend: Update UI
+            Frontend-->>Employee: Display success message<br/>"Clocked out successfully"
+            Frontend->>Frontend: Refresh attendance history
+            Frontend->>Frontend: Show calculated work hours
+            Frontend-->>Employee: Display updated attendance table
+        end
+    end

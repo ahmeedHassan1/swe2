@@ -1,0 +1,40 @@
+---
+title: Class Diagram - API Gateway
+---
+classDiagram
+    %% Main Application
+    class ApiGatewayApplication {
+        <<SpringBootApplication>>
+        +main(String[] args) void
+    }
+    
+    %% Filter
+    class AuthenticationFilter {
+        -JwtUtil jwtUtil
+        -RouteValidator validator
+        +apply(Config config) GatewayFilter
+        -onError(ServerWebExchange exchange, String err, HttpStatus httpStatus) Mono~Void~
+    }
+    
+    class Config {
+        %% Configuration class
+    }
+    
+    %% Validator
+    class RouteValidator {
+        +isSecured Predicate~ServerHttpRequest~
+    }
+    
+    %% Utility
+    class JwtUtil {
+        -String secretKey
+        +validateToken(String token) void
+        +extractEmail(String token) String
+        +extractRole(String token) Role
+    }
+    
+    %% Relationships
+    ApiGatewayApplication --> AuthenticationFilter : configures
+    AuthenticationFilter --> JwtUtil : uses
+    AuthenticationFilter --> RouteValidator : uses
+    AuthenticationFilter --> Config : uses

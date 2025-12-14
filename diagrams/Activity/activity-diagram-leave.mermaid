@@ -1,0 +1,51 @@
+---
+title: Activity Diagram - Leave Request and Approval Process
+---
+graph TD
+    Start([Start: Employee Wants Leave]) --> NavigateLeave[Navigate to Leaves Page]
+    NavigateLeave --> ClickNew[Click New Request Button]
+    ClickNew --> ShowForm[Display Leave Request Form]
+    ShowForm --> FillForm[Fill: Type, Start Date, End Date, Reason]
+    FillForm --> ClickSubmit[Click Submit Button]
+    ClickSubmit --> ValidateDates{Dates Valid?}
+    
+    ValidateDates -->|endDate < startDate| ShowDateError[Display Date Validation Error]
+    ShowDateError --> FillForm
+    
+    ValidateDates -->|startDate in past| ShowPastError[Display Past Date Error]
+    ShowPastError --> FillForm
+    
+    ValidateDates -->|Valid| SendRequest[POST /api/leaves]
+    SendRequest --> CreateLeave[Create LeaveRequest Entity]
+    CreateLeave --> SetStatus[Set status = PENDING]
+    SetStatus --> SaveLeave[Save Leave Request]
+    SaveLeave --> ShowSuccessEmp[Display Success Message]
+    ShowSuccessEmp --> RedirectList[Redirect to Leaves List]
+    RedirectList --> EmployeeWaits[Employee Views Status as PENDING]
+    
+    EmployeeWaits --> AdminNotified[Admin Reviews Leave Requests]
+    AdminNotified --> AdminOpens[Admin Opens Leaves Page]
+    AdminOpens --> FetchPending[GET /api/leaves or /api/leaves/status/PENDING]
+    FetchPending --> DisplayTable[Display Pending Requests in Table]
+    DisplayTable --> AdminDecision{Admin Decision?}
+    
+    AdminDecision -->|Approve| ClickApprove[Click Approve Button]
+    ClickApprove --> SendApprove["PUT /api/leaves/{id}/status"]
+    SendApprove --> UpdateApprove[Set status = APPROVED]
+    UpdateApprove --> SaveApprove[Save Updated Leave]
+    SaveApprove --> RefreshAdmin1[Refresh Admin View]
+    RefreshAdmin1 --> NotifyEmployee1[Employee Sees APPROVED Status]
+    NotifyEmployee1 --> End([End])
+    
+    AdminDecision -->|Reject| ClickReject[Click Reject Button]
+    ClickReject --> SendReject["PUT /api/leaves/{id}/status"]
+    SendReject --> UpdateReject[Set status = REJECTED]
+    UpdateReject --> SaveReject[Save Updated Leave]
+    SaveReject --> RefreshAdmin2[Refresh Admin View]
+    RefreshAdmin2 --> NotifyEmployee2[Employee Sees REJECTED Status]
+    NotifyEmployee2 --> End
+    
+    style Start fill:#90ee90
+    style End fill:#ffb6c1
+    style ValidateDates fill:#ffd700
+    style AdminDecision fill:#ffd700

@@ -1,0 +1,57 @@
+---
+title: Activity Diagram - Admin Creates Employee
+---
+graph TD
+    Start([Start: Admin Creates Employee]) --> Navigate[Navigate to Employees Page]
+    Navigate --> ClickAdd[Click Add Employee Button]
+    ClickAdd --> ShowForm[Display Employee Form]
+    ShowForm --> FillPersonal[Fill: First Name, Last Name, Email]
+    FillPersonal --> FillContact[Fill: Phone, Address]
+    FillContact --> FillJob[Fill: Department, Position]
+    FillJob --> FillSalary[Fill: Join Date, Salary]
+    FillSalary --> SetPassword[Set Initial Password default: password123]
+    SetPassword --> ClickSubmit[Click Add Employee Button]
+    ClickSubmit --> ValidateForm{Form Valid?}
+    
+    ValidateForm -->|No| ShowFormError[Display Validation Errors]
+    ShowFormError --> FillPersonal
+    
+    ValidateForm -->|Yes| CreateUser[POST /api/auth/register]
+    CreateUser --> SendUserData[Send: email, password, role=EMPLOYEE]
+    SendUserData --> CheckEmail{Email Exists?}
+    
+    CheckEmail -->|Yes| ShowEmailError[Display Email Already Exists Error]
+    ShowEmailError --> FillPersonal
+    
+    CheckEmail -->|No| HashPassword[Hash Password with BCrypt]
+    HashPassword --> SaveUser[Save User Entity]
+    SaveUser --> GenToken[Generate JWT Token]
+    GenToken --> ReturnUserData[Return: userId, token, email, role]
+    ReturnUserData --> CreateEmployee[POST /api/employees]
+    CreateEmployee --> PrepareData[Prepare Employee Data with userId]
+    PrepareData --> GenEmployeeId["Generate employeeId = EMP{timestamp}"]
+    GenEmployeeId --> ValidateSalary{Salary > 0?}
+    
+    ValidateSalary -->|No| ShowSalaryError[Display Salary Error]
+    ShowSalaryError --> End([End - Partial Failure])
+    
+    ValidateSalary -->|Yes| ValidateJoinDate{joinDate <= today?}
+    
+    ValidateJoinDate -->|No| ShowDateError[Display Date Error]
+    ShowDateError --> End
+    
+    ValidateJoinDate -->|Yes| SaveEmployee[Save Employee Entity]
+    SaveEmployee --> SetTimestamps[Set createdAt = now]
+    SetTimestamps --> LinkUser[Link employee.userId to user.id]
+    LinkUser --> ShowSuccess[Display Success Message]
+    ShowSuccess --> Redirect[Redirect to Employees List]
+    Redirect --> RefreshList[Refresh Employee List]
+    RefreshList --> EndSuccess([End - Success])
+    
+    style Start fill:#90ee90
+    style EndSuccess fill:#90ee90
+    style End fill:#ffb6c1
+    style ValidateForm fill:#ffd700
+    style CheckEmail fill:#ffd700
+    style ValidateSalary fill:#ffd700
+    style ValidateJoinDate fill:#ffd700

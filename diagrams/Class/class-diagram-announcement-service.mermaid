@@ -1,0 +1,95 @@
+---
+title: Class Diagram - Announcement Service
+---
+classDiagram
+    %% Entities
+    class Announcement {
+        -Long id
+        -Long createdBy
+        -String title
+        -String content
+        -String priority
+        -LocalDateTime createdAt
+        +onCreate() void
+    }
+    
+    class User {
+        -Long id
+        -String email
+        -String role
+    }
+    
+    %% DTOs
+    class CreateAnnouncementRequest {
+        -String title
+        -String content
+        -String priority
+    }
+    
+    class AnnouncementResponse {
+        -Long id
+        -String title
+        -String content
+        -String priority
+        -LocalDateTime createdAt
+    }
+    
+    %% Repositories
+    class AnnouncementRepository {
+        <<interface>>
+        +findAllByOrderByCreatedAtDesc() List~Announcement~
+        +save(Announcement announcement) Announcement
+    }
+    
+    class UserRepository {
+        <<interface>>
+        +findByEmail(String email) Optional~User~
+    }
+    
+    %% Service
+    class AnnouncementService {
+        -AnnouncementRepository announcementRepository
+        -AnnouncementMapper announcementMapper
+        -UserRepository userRepository
+        +createAnnouncement(CreateAnnouncementRequest request) AnnouncementResponse
+        +getAllAnnouncements() List~AnnouncementResponse~
+    }
+    
+    %% Controller
+    class AnnouncementController {
+        -AnnouncementService announcementService
+        +createAnnouncement(CreateAnnouncementRequest request) ResponseEntity~AnnouncementResponse~
+        +getAllAnnouncements() ResponseEntity~List~
+    }
+    
+    %% Mapper
+    class AnnouncementMapper {
+        <<interface>>
+        +toEntity(CreateAnnouncementRequest request) Announcement
+        +toResponse(Announcement announcement) AnnouncementResponse
+        +toResponseList(List~Announcement~ announcements) List~AnnouncementResponse~
+    }
+    
+    %% Security
+    class AdminOnly {
+        <<annotation>>
+    }
+    
+    class SecurityAspect {
+        +checkAdminAccess(JoinPoint joinPoint) void
+    }
+    
+    %% Relationships
+    Announcement --> User : created by
+    AnnouncementService --> AnnouncementRepository : uses
+    AnnouncementService --> UserRepository : uses
+    AnnouncementService --> AnnouncementMapper : uses
+    AnnouncementController --> AnnouncementService : uses
+    AnnouncementController --> CreateAnnouncementRequest : receives
+    AnnouncementController --> AnnouncementResponse : returns
+    AnnouncementController --> AdminOnly : annotated with
+    AnnouncementRepository --> Announcement : manages
+    UserRepository --> User : manages
+    AnnouncementMapper --> Announcement : maps to/from
+    AnnouncementMapper --> CreateAnnouncementRequest : maps from
+    AnnouncementMapper --> AnnouncementResponse : maps to

@@ -1,0 +1,75 @@
+---
+title: Activity Diagram - Payroll Processing
+---
+graph TD
+    Start([Start: Admin Processes Payroll]) --> OpenPayroll[Admin Opens Payroll Page]
+    OpenPayroll --> SelectPeriod[Select Month and Year]
+    SelectPeriod --> ClickProcess[Click Process Payroll Button]
+    ClickProcess --> FetchEmployees[GET /api/employees]
+    FetchEmployees --> LoadData[Load All Employees]
+    LoadData --> InitDialog[Open Process Payroll Dialog]
+    InitDialog --> InitData[Initialize Payroll Data for Each Employee]
+    InitData --> SetBaseSalary[baseSalary = employee.salary]
+    SetBaseSalary --> SetDefaults[bonuses = 0, deductions = 0]
+    SetDefaults --> ShowTaxToggle[Display Tax Toggle Checkbox]
+    ShowTaxToggle --> AdminAction{Admin Action?}
+    
+    AdminAction -->|Toggle Tax| CalculateTax{Tax Enabled?}
+    CalculateTax -->|Yes| SetTax[deductions = baseSalary * 0.10]
+    CalculateTax -->|No| ClearTax[deductions = 0]
+    SetTax --> UpdateDisplay1
+    ClearTax --> UpdateDisplay1[Update All Employee Deductions Display]
+    UpdateDisplay1 --> AdminAction
+    
+    AdminAction -->|Enter Bonuses| InputBonus[Admin Enters Bonus for Employee]
+    InputBonus --> UpdateBonus[Update bonuses field]
+    UpdateBonus --> RecalcNet1[Calculate netSalary]
+    RecalcNet1 --> AdminAction
+    
+    AdminAction -->|Enter Deductions| InputDeduction[Admin Enters Deduction]
+    InputDeduction --> UpdateDeduction[Update deductions field]
+    UpdateDeduction --> RecalcNet2[Calculate netSalary]
+    RecalcNet2 --> AdminAction
+    
+    AdminAction -->|Confirm| ClickConfirm[Click Confirm & Process Button]
+    ClickConfirm --> LoopEmployees[For Each Employee]
+    LoopEmployees --> CheckDuplicate{Payroll Already Exists?}
+    
+    CheckDuplicate -->|Yes| SkipEmployee[Skip Employee - Count as Skipped]
+    SkipEmployee --> NextEmployee{More Employees?}
+    
+    CheckDuplicate -->|No| CreatePayroll[POST /api/payroll]
+    CreatePayroll --> SendData[Send: employeeId, month, year, baseSalary, bonuses, deductions]
+    SendData --> SavePayroll[Create Payroll Entity]
+    SavePayroll --> CalcNet[Calculate: netSalary = base + bonuses - deductions]
+    CalcNet --> SetPending[Set status = PENDING]
+    SetPending --> SetProcessed[Set processedAt = now]
+    SetProcessed --> SaveRecord[Save Payroll Record]
+    SaveRecord --> CountSuccess[Count as Success]
+    CountSuccess --> NextEmployee
+    
+    NextEmployee -->|Yes| LoopEmployees
+    NextEmployee -->|No| ShowSummary[Display Summary Alert]
+    ShowSummary --> DisplayStats[Show: Processed, Skipped, Errors Count]
+    DisplayStats --> CloseDialog[Close Process Dialog]
+    CloseDialog --> RefreshView[Refresh Payroll View]
+    RefreshView --> DisplayTable[Display Payroll Records Table]
+    DisplayTable --> AdminReviews[Admin Reviews Records]
+    AdminReviews --> SelectRecord{Record to Pay?}
+    
+    SelectRecord -->|Yes| ClickPay[Click Mark Paid Button]
+    ClickPay --> SendPay["PUT /api/payroll/{id}/pay"]
+    SendPay --> UpdateStatus[Set status = PAID]
+    UpdateStatus --> SetPaymentDate[Set paymentDate = now]
+    SetPaymentDate --> SavePaid[Save Updated Record]
+    SavePaid --> RefreshTable[Refresh Payroll Table]
+    RefreshTable --> End([End])
+    
+    SelectRecord -->|No| End
+    
+    style Start fill:#90ee90
+    style End fill:#ffb6c1
+    style AdminAction fill:#ffd700
+    style CheckDuplicate fill:#ffd700
+    style NextEmployee fill:#ffd700
+    style SelectRecord fill:#ffd700

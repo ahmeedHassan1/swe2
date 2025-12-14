@@ -1,0 +1,69 @@
+---
+title: Sequence Diagram - User Login Flow
+---
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant APIGateway as API Gateway
+    participant AuthService as Auth Service
+    participant Database as Auth DB
+    participant EmployeeService as Employee Service
+    participant EmpDB as Employee DB
+
+    User->>Frontend: Enter email & password
+    User->>Frontend: Click Sign In
+    Frontend->>Frontend: Validate input fields
+    
+    Frontend->>APIGateway: POST /api/auth/login<br/>{email, password}
+    APIGateway->>AuthService: Forward request
+    
+    AuthService->>Database: SELECT * FROM users<br/>WHERE email = ?
+    Database-->>AuthService: User record
+    
+    alt User Not Found
+        AuthService-->>APIGateway: 401 Invalid credentials
+        APIGateway-->>Frontend: 401 Error
+        Frontend-->>User: Display error message
+    else User Found
+        AuthService->>AuthService: Verify password<br/>(BCrypt.matches)
+        
+        alt Password Invalid
+            AuthService-->>APIGateway: 401 Invalid credentials
+            APIGateway-->>Frontend: 401 Error
+            Frontend-->>User: Display error message
+        else Password Valid
+            AuthService->>AuthService: Generate JWT token<br/>(email, role, 24h expiry)
+            AuthService-->>APIGateway: 200 {token, userId, email, role}
+            APIGateway-->>Frontend: 200 Auth response
+            
+            Frontend->>Frontend: Store token in localStorage
+            
+            alt User is Employee
+                Frontend->>APIGateway: GET /api/employees/by-user/{userId}<br/>Authorization: Bearer {token}
+                APIGateway->>APIGateway: Validate JWT token
+                APIGateway->>EmployeeService: Forward request
+                EmployeeService->>EmpDB: SELECT * FROM employees<br/>WHERE user_id = ?
+                EmpDB-->>EmployeeService: Employee record
+                EmployeeService-->>APIGateway: Employee data
+                APIGateway-->>Frontend: Employee profile
+                Frontend->>Frontend: Merge & store user data<br/>{email, role, userId, employeeId, employeeTableId}
+            end
+            
+            Frontend->>Frontend: Redirect to /dashboard
+            Frontend->>Frontend: Load role-based dashboard
+            
+            alt User is Admin
+                Frontend->>APIGateway: GET /api/employees
+                Frontend->>APIGateway: GET /api/leaves/status/PENDING
+                APIGateway->>EmployeeService: Fetch employees
+                APIGateway->>AuthService: Fetch pending leaves
+                APIGateway-->>Frontend: Statistics data
+                Frontend-->>User: Display Admin Dashboard
+            else User is Employee
+                Frontend->>APIGateway: GET /api/attendance/employee/{id}
+                Frontend->>APIGateway: GET /api/leaves/employee/{id}
+                APIGateway-->>Frontend: Personal stats
+                Frontend-->>User: Display Employee Dashboard
+            end
+        end
+    end

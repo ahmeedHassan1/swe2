@@ -1,0 +1,111 @@
+---
+title: Class Diagram - Payroll Service
+---
+classDiagram
+    %% Entity
+    class Payroll {
+        -Long id
+        -Long employeeId
+        -Integer month
+        -Integer year
+        -BigDecimal baseSalary
+        -BigDecimal bonuses
+        -BigDecimal deductions
+        -BigDecimal netSalary
+        -PayrollStatus status
+        -LocalDateTime paymentDate
+        -LocalDateTime processedAt
+        -calculateNetSalary() void
+        +onCreate() void
+        +onUpdate() void
+    }
+    
+    class PayrollStatus {
+        <<enumeration>>
+        PENDING
+        PAID
+    }
+    
+    %% DTOs
+    class ProcessPayrollRequest {
+        -Long employeeId
+        -Integer month
+        -Integer year
+        -BigDecimal baseSalary
+        -BigDecimal bonuses
+        -BigDecimal deductions
+    }
+    
+    class PayrollResponse {
+        -Long id
+        -Long employeeId
+        -Integer month
+        -Integer year
+        -BigDecimal baseSalary
+        -BigDecimal bonuses
+        -BigDecimal deductions
+        -BigDecimal netSalary
+        -PayrollStatus status
+        -LocalDateTime paymentDate
+        -LocalDateTime processedAt
+    }
+    
+    %% Repository
+    class PayrollRepository {
+        <<interface>>
+        +findById(Long id) Optional~Payroll~
+        +findByEmployeeId(Long employeeId) List~Payroll~
+        +findByMonthAndYear(Integer month, Integer year) List~Payroll~
+        +findByEmployeeIdAndMonthAndYear(Long employeeId, Integer month, Integer year) Optional~Payroll~
+        +save(Payroll payroll) Payroll
+    }
+    
+    %% Service
+    class PayrollService {
+        -PayrollRepository payrollRepository
+        -PayrollMapper payrollMapper
+        +processPayroll(ProcessPayrollRequest request) PayrollResponse
+        +markAsPaid(Long id) PayrollResponse
+        +getEmployeePayroll(Long employeeId) List~PayrollResponse~
+        +getPayrollByPeriod(Integer month, Integer year) List~PayrollResponse~
+    }
+    
+    %% Controller
+    class PayrollController {
+        -PayrollService payrollService
+        +processPayroll(ProcessPayrollRequest request) ResponseEntity~PayrollResponse~
+        +markAsPaid(Long id) ResponseEntity~PayrollResponse~
+        +getEmployeePayroll(Long employeeId) ResponseEntity~List~
+        +getPayrollByPeriod(Integer month, Integer year) ResponseEntity~List~
+    }
+    
+    %% Mapper
+    class PayrollMapper {
+        <<interface>>
+        +toEntity(ProcessPayrollRequest request) Payroll
+        +toResponse(Payroll payroll) PayrollResponse
+        +toResponseList(List~Payroll~ payrolls) List~PayrollResponse~
+    }
+    
+    %% Security
+    class AdminOnly {
+        <<annotation>>
+    }
+    
+    class JwtAuthenticationFilter {
+        -JwtUtil jwtUtil
+        +doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) void
+    }
+    
+    %% Relationships
+    Payroll --> PayrollStatus : has
+    PayrollService --> PayrollRepository : uses
+    PayrollService --> PayrollMapper : uses
+    PayrollController --> PayrollService : uses
+    PayrollController --> ProcessPayrollRequest : receives
+    PayrollController --> PayrollResponse : returns
+    PayrollController --> AdminOnly : annotated with
+    PayrollRepository --> Payroll : manages
+    PayrollMapper --> Payroll : maps to/from
+    PayrollMapper --> ProcessPayrollRequest : maps from
+    PayrollMapper --> PayrollResponse : maps to

@@ -1,0 +1,95 @@
+---
+title: Class Diagram - Auth Service
+---
+classDiagram
+    %% Entities
+    class User {
+        -Long id
+        -String email
+        -String password
+        -Role role
+        -LocalDateTime createdAt
+        -LocalDateTime updatedAt
+        +onCreate() void
+        +onUpdate() void
+    }
+    
+    class Role {
+        <<enumeration>>
+        ADMIN
+        EMPLOYEE
+    }
+    
+    %% DTOs
+    class LoginRequest {
+        -String email
+        -String password
+    }
+    
+    class RegisterRequest {
+        -String email
+        -String password
+        -Role role
+    }
+    
+    class AuthResponse {
+        -String token
+        -String email
+        -Role role
+        -Long expiresIn
+        -Long userId
+    }
+    
+    %% Repository
+    class UserRepository {
+        <<interface>>
+        +findByEmail(String email) Optional~User~
+        +existsByEmail(String email) boolean
+        +save(User user) User
+    }
+    
+    %% Service
+    class AuthService {
+        -UserRepository userRepository
+        -PasswordEncoder passwordEncoder
+        -JwtUtil jwtUtil
+        +register(RegisterRequest request) AuthResponse
+        +login(LoginRequest request) AuthResponse
+        +validateToken(String token) void
+        -buildAuthResponse(String token, User user) AuthResponse
+    }
+    
+    %% Controller
+    class AuthController {
+        -AuthService authService
+        +register(RegisterRequest request) ResponseEntity~AuthResponse~
+        +login(LoginRequest request) ResponseEntity~AuthResponse~
+        +adminRegister(RegisterRequest request) ResponseEntity~AuthResponse~
+        +validateToken(String token) ResponseEntity~String~
+    }
+    
+    %% Utility
+    class JwtUtil {
+        -String secretKey
+        -long expirationTime
+        +generateToken(String email, Role role) String
+        +validateToken(String token) void
+        +extractEmail(String token) String
+        +extractRole(String token) Role
+    }
+    
+    %% Security
+    class SecurityConfig {
+        +passwordEncoder() PasswordEncoder
+        +securityFilterChain(HttpSecurity http) SecurityFilterChain
+    }
+    
+    %% Relationships
+    User --> Role : has
+    AuthService --> UserRepository : uses
+    AuthService --> JwtUtil : uses
+    AuthController --> AuthService : uses
+    AuthController --> LoginRequest : receives
+    AuthController --> RegisterRequest : receives
+    AuthController --> AuthResponse : returns
+    UserRepository --> User : manages

@@ -1,0 +1,45 @@
+---
+title: Activity Diagram - Employee Login Process
+---
+graph TD
+    Start([Start]) --> EnterCredentials[Enter Email and Password]
+    EnterCredentials --> ClickLogin[Click Sign In Button]
+    ClickLogin --> ValidateInput{Input Valid?}
+    
+    ValidateInput -->|No| ShowError1[Display Validation Error]
+    ShowError1 --> EnterCredentials
+    
+    ValidateInput -->|Yes| SendLoginRequest[Send POST /api/auth/login]
+    SendLoginRequest --> AuthService[Auth Service: Verify Credentials]
+    AuthService --> CheckPassword{Password Correct?}
+    
+    CheckPassword -->|No| ReturnError[Return 401 Error]
+    ReturnError --> ShowError2[Display Invalid Credentials Error]
+    ShowError2 --> EnterCredentials
+    
+    CheckPassword -->|Yes| GenerateToken[Generate JWT Token]
+    GenerateToken --> GetUserData[Get User Data: email, role, userId]
+    GetUserData --> FetchEmployeeData{Role is Employee?}
+    
+    FetchEmployeeData -->|Yes| GetEmployeeProfile["GET /api/employees/by-user/{userId}"]
+    GetEmployeeProfile --> MergeData[Merge Employee Data with User Data]
+    MergeData --> StoreData
+    
+    FetchEmployeeData -->|No Admin| StoreData[Store Token and User in LocalStorage]
+    StoreData --> RedirectDashboard[Redirect to Dashboard]
+    RedirectDashboard --> LoadDashboard{User Role?}
+    
+    LoadDashboard -->|ADMIN| ShowAdminDashboard[Display Admin Dashboard with Stats]
+    LoadDashboard -->|EMPLOYEE| ShowEmployeeDashboard[Display Employee Dashboard]
+    
+    ShowAdminDashboard --> FetchAdminStats[Fetch Total Employees & Pending Leaves]
+    FetchAdminStats --> DisplayStats[Display Statistics Cards]
+    DisplayStats --> End([End])
+    
+    ShowEmployeeDashboard --> FetchEmployeeStats[Fetch Weekly Hours & Used Leaves]
+    FetchEmployeeStats --> DisplayStats
+    
+    style Start fill:#90ee90
+    style End fill:#ffb6c1
+    style CheckPassword fill:#ffd700
+    style LoadDashboard fill:#ffd700

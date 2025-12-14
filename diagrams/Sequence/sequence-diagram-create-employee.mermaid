@@ -1,0 +1,115 @@
+---
+title: Sequence Diagram - Admin Creates Employee
+---
+sequenceDiagram
+    actor Admin
+    participant Frontend
+    participant APIGateway as API Gateway
+    participant AuthService as Auth Service
+    participant AuthDB as Auth DB
+    participant EmployeeService as Employee Service
+    participant EmployeeDB as Employee DB
+
+    Admin->>Frontend: Navigate to Employees page
+    Admin->>Frontend: Click "Add Employee"
+    Frontend-->>Admin: Display employee form
+    
+    Admin->>Frontend: Fill form:<br/>firstName, lastName, email, phone,<br/>address, department, position,<br/>joinDate, salary
+    Admin->>Frontend: Set password (default: password123)
+    Admin->>Frontend: Click "Add Employee"
+    
+    Frontend->>Frontend: Validate form fields
+    
+    alt Form Invalid
+        Frontend-->>Admin: Display validation errors
+    else Form Valid
+        rect rgb(255, 245, 230)
+            Note over Frontend,AuthDB: STEP 1: Create User Account
+            
+            Frontend->>APIGateway: POST /api/auth/register<br/>{email, password, role: EMPLOYEE}<br/>(No Authorization header)
+            APIGateway->>AuthService: Forward request
+            
+            AuthService->>AuthDB: SELECT * FROM users WHERE email = ?
+            
+            alt Email Already Exists
+                AuthDB-->>AuthService: User found
+                AuthService-->>APIGateway: 400 Email already exists
+                APIGateway-->>Frontend: Error response
+                Frontend-->>Admin: Display error:<br/>"Email already exists"
+            else Email Available
+                AuthDB-->>AuthService: No user found
+                
+                AuthService->>AuthService: Create User entity
+                AuthService->>AuthService: Hash password using BCrypt
+                AuthService->>AuthService: Set role = EMPLOYEE
+                AuthService->>AuthService: Set createdAt = now()
+                
+                AuthService->>AuthDB: INSERT INTO users<br/>(email, password, role, created_at)
+                AuthDB-->>AuthService: User saved with ID
+                
+                AuthService->>AuthService: Generate JWT token<br/>(email, role, 24h expiry)
+                
+                AuthService-->>APIGateway: 200 {token, userId, email, role, expiresIn}
+                APIGateway-->>Frontend: User created successfully
+            end
+        end
+        
+        alt User Creation Failed
+            Frontend-->>Admin: Stop process & display error
+        else User Created Successfully
+            rect rgb(230, 255, 230)
+                Note over Frontend,EmployeeDB: STEP 2: Create Employee Record
+                
+                Frontend->>Frontend: Prepare employee data:<br/>Add userId from response
+                
+                Frontend->>APIGateway: POST /api/employees<br/>{firstName, lastName, email, phone, address,<br/>department, position, joinDate, salary, userId}<br/>Authorization: Bearer {adminToken}
+                APIGateway->>APIGateway: Validate JWT & check ADMIN role
+                APIGateway->>EmployeeService: Forward request
+                
+                EmployeeService->>EmployeeDB: SELECT * FROM employees WHERE email = ?
+                
+                alt Email Already Exists
+                    EmployeeDB-->>EmployeeService: Employee found
+                    EmployeeService-->>APIGateway: 400 Email in use
+                    APIGateway-->>Frontend: Error response
+                    Frontend-->>Admin: Display error:<br/>"Failed to create employee record"
+                    Note over Frontend: User account created but employee failed<br/>(Partial failure state)
+                else Email Available
+                    EmployeeDB-->>EmployeeService: No employee found
+                    
+                    EmployeeService->>EmployeeService: Create Employee entity
+                    EmployeeService->>EmployeeService: Map request to entity
+                    EmployeeService->>EmployeeService: Generate employeeId =<br/>"EMP" + currentTimeMillis
+                    EmployeeService->>EmployeeService: Set createdAt = now()
+                    EmployeeService->>EmployeeService: Link userId to user account
+                    
+                    EmployeeService->>EmployeeService: Validate:<br/>- salary > 0<br/>- joinDate <= today
+                    
+                    alt Validation Fails
+                        EmployeeService-->>APIGateway: 400 Validation error
+                        APIGateway-->>Frontend: Error response
+                        Frontend-->>Admin: Display validation error
+                    else Validation Passes
+                        EmployeeService->>EmployeeDB: INSERT INTO employees<br/>(user_id, employee_id, first_name, last_name,<br/>email, phone, address, department, position,<br/>join_date, salary, created_at)
+                        EmployeeDB-->>EmployeeService: Employee saved with ID
+                        
+                        EmployeeService->>EmployeeService: Map entity to response DTO
+                        EmployeeService-->>APIGateway: 200 Employee created
+                        APIGateway-->>Frontend: Employee response
+                        
+                        Frontend-->>Admin: Display success message:<br/>"Employee added successfully!"
+                        Frontend->>Frontend: Redirect to employees list
+                        
+                        Frontend->>APIGateway: GET /api/employees<br/>Authorization: Bearer {adminToken}
+                        APIGateway->>EmployeeService: Forward request
+                        EmployeeService->>EmployeeDB: SELECT * FROM employees<br/>LIMIT, OFFSET (pagination)
+                        EmployeeDB-->>EmployeeService: Page of employees
+                        EmployeeService-->>APIGateway: Employee list
+                        APIGateway-->>Frontend: Paginated employee data
+                        
+                        Frontend-->>Admin: Display updated employee list<br/>with new employee
+                    end
+                end
+            end
+        end
+    end

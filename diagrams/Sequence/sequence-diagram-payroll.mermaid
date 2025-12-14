@@ -1,0 +1,117 @@
+---
+title: Sequence Diagram - Payroll Processing Flow
+---
+sequenceDiagram
+    actor Admin
+    participant Frontend
+    participant APIGateway as API Gateway
+    participant PayrollService as Payroll Service
+    participant PayrollDB as Payroll DB
+    participant EmployeeService as Employee Service
+    participant EmployeeDB as Employee DB
+
+    Admin->>Frontend: Navigate to Payroll page
+    Admin->>Frontend: Select Month and Year
+    Admin->>Frontend: Click "Process Payroll"
+    
+    Frontend->>APIGateway: GET /api/employees<br/>Authorization: Bearer {token}
+    APIGateway->>APIGateway: Validate JWT & check ADMIN role
+    APIGateway->>EmployeeService: Forward request
+    EmployeeService->>EmployeeDB: SELECT * FROM employees
+    EmployeeDB-->>EmployeeService: All employees
+    EmployeeService-->>APIGateway: Page<Employee>
+    APIGateway-->>Frontend: Employees list
+    
+    Frontend->>Frontend: Open Process Payroll Dialog
+    Frontend->>Frontend: For each employee:<br/>- baseSalary = employee.salary<br/>- bonuses = 0<br/>- deductions = 0
+    Frontend-->>Admin: Display payroll processing table
+    
+    alt Admin toggles tax
+        Admin->>Frontend: Check "Apply 10% tax" checkbox
+        Frontend->>Frontend: For each employee:<br/>deductions = baseSalary * 0.10
+        Frontend-->>Admin: Update deductions display
+    end
+    
+    loop For each employee
+        Admin->>Frontend: Enter bonuses (optional)
+        Admin->>Frontend: Modify deductions (optional)
+        Frontend->>Frontend: Calculate netSalary =<br/>baseSalary + bonuses - deductions
+        Frontend-->>Admin: Display calculated net salary
+    end
+    
+    Admin->>Frontend: Click "Confirm & Process"
+    
+    loop For each employee
+        Frontend->>APIGateway: POST /api/payroll<br/>{employeeId, month, year, baseSalary,<br/>bonuses, deductions}<br/>Authorization: Bearer {token}
+        APIGateway->>APIGateway: Validate JWT & check ADMIN role
+        APIGateway->>PayrollService: Forward request
+        
+        PayrollService->>PayrollDB: SELECT * FROM payroll<br/>WHERE employee_id = ? AND month = ? AND year = ?
+        
+        alt Payroll Already Exists
+            PayrollDB-->>PayrollService: Record found
+            PayrollService-->>APIGateway: 400 Already processed
+            APIGateway-->>Frontend: Error (counted as skipped)
+        else No Existing Payroll
+            PayrollDB-->>PayrollService: No record
+            
+            PayrollService->>PayrollService: Create Payroll entity
+            PayrollService->>PayrollService: Set bonuses = 0 if null
+            PayrollService->>PayrollService: Set deductions = 0 if null
+            PayrollService->>PayrollService: Calculate netSalary =<br/>baseSalary + bonuses - deductions
+            PayrollService->>PayrollService: Set status = PENDING
+            PayrollService->>PayrollService: Set processedAt = now()
+            
+            PayrollService->>PayrollDB: INSERT INTO payroll<br/>(employee_id, month, year, base_salary,<br/>bonuses, deductions, net_salary, status, processed_at)
+            PayrollDB-->>PayrollService: Record saved with ID
+            
+            PayrollService-->>APIGateway: 200 Payroll created
+            APIGateway-->>Frontend: Success (counted as processed)
+        end
+    end
+    
+    Frontend->>Frontend: Count: success, skipped, errors
+    Frontend-->>Admin: Display summary alert:<br/>"Processed: X, Skipped: Y, Errors: Z"
+    Frontend->>Frontend: Close dialog
+    
+    Frontend->>APIGateway: GET /api/payroll/period?month=X&year=Y<br/>Authorization: Bearer {token}
+    APIGateway->>PayrollService: Forward request
+    PayrollService->>PayrollDB: SELECT * FROM payroll<br/>WHERE month = ? AND year = ?
+    PayrollDB-->>PayrollService: Payroll records
+    PayrollService-->>APIGateway: List of payroll records
+    APIGateway-->>Frontend: Payroll data
+    
+    Frontend-->>Admin: Display payroll records table
+    
+    rect rgb(230, 255, 230)
+        Note over Admin,PayrollDB: Admin Marks Payroll as Paid
+        
+        Admin->>Frontend: Click "Mark Paid" for a record
+        Frontend->>APIGateway: PUT /api/payroll/{id}/pay<br/>Authorization: Bearer {token}
+        APIGateway->>APIGateway: Validate JWT & check ADMIN role
+        APIGateway->>PayrollService: Forward request
+        
+        PayrollService->>PayrollDB: SELECT * FROM payroll WHERE id = ?
+        
+        alt Payroll Not Found
+            PayrollDB-->>PayrollService: No record
+            PayrollService-->>APIGateway: 404 Not found
+            APIGateway-->>Frontend: Error
+            Frontend-->>Admin: Display error message
+        else Already Paid
+            PayrollDB-->>PayrollService: Record with status = PAID
+            PayrollService-->>APIGateway: 400 Already paid
+            APIGateway-->>Frontend: Error
+            Frontend-->>Admin: Display error message
+        else Status is PENDING
+            PayrollDB-->>PayrollService: Payroll record
+            PayrollService->>PayrollService: Set status = PAID
+            PayrollService->>PayrollService: Set paymentDate = now()
+            PayrollService->>PayrollDB: UPDATE payroll<br/>SET status = 'PAID', payment_date = ?<br/>WHERE id = ?
+            PayrollDB-->>PayrollService: Record updated
+            PayrollService-->>APIGateway: 200 Updated payroll
+            APIGateway-->>Frontend: Success
+            Frontend->>Frontend: Refresh payroll table
+            Frontend-->>Admin: Display success message
+        end
+    end

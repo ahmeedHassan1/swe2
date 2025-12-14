@@ -1,0 +1,106 @@
+---
+title: Entity Relationship Diagram (ERD) - Complete System
+---
+erDiagram
+    %% Auth Service Database
+    USERS {
+        bigint id PK "Primary Key, Auto-increment"
+        varchar email UK "Unique, Not Null"
+        varchar password "Not Null, Encrypted with BCrypt"
+        varchar role "ENUM: ADMIN, EMPLOYEE"
+        timestamp created_at "Auto-set on creation"
+        timestamp updated_at "Auto-set on update"
+    }
+    
+    %% Employee Service Database
+    EMPLOYEES {
+        bigint id PK "Primary Key, Auto-increment"
+        bigint user_id UK,FK "Unique, Links to USERS.id"
+        varchar employee_id UK "Unique, Format: EMP{timestamp}"
+        varchar first_name "Not Null"
+        varchar last_name "Not Null"
+        varchar email UK "Unique, Not Null"
+        varchar phone
+        varchar address
+        varchar department
+        varchar position
+        date join_date "Not Null, Must be <= today"
+        decimal salary "Not Null, Must be > 0"
+        timestamp created_at "Auto-set on creation"
+        timestamp updated_at "Auto-set on update"
+    }
+    
+    %% Attendance Service Database
+    ATTENDANCE {
+        bigint id PK "Primary Key, Auto-increment"
+        bigint employee_id FK "Not Null, References EMPLOYEES.id"
+        timestamp clock_in_time "Not Null"
+        timestamp clock_out_time "Nullable"
+        date date "Not Null, Default: today"
+        varchar status "ENUM: PRESENT, ABSENT, LATE, HALF_DAY"
+        decimal work_hours "Calculated: (clock_out - clock_in) in hours"
+        text notes
+        timestamp created_at "Auto-set on creation"
+    }
+    
+    %% Leave Service Database
+    LEAVES {
+        bigint id PK "Primary Key, Auto-increment"
+        bigint employee_id FK "Not Null, References EMPLOYEES.id"
+        varchar leave_type "ENUM: SICK_LEAVE, CASUAL_LEAVE, ANNUAL_LEAVE, EMERGENCY_LEAVE, UNPAID_LEAVE"
+        date start_date "Not Null, Must be <= end_date"
+        date end_date "Not Null, Must be >= start_date"
+        text reason
+        varchar status "ENUM: PENDING, APPROVED, REJECTED"
+        timestamp created_at "Auto-set on creation"
+    }
+    
+    %% Payroll Service Database
+    PAYROLL {
+        bigint id PK "Primary Key, Auto-increment"
+        bigint employee_id FK "Not Null, References EMPLOYEES.id"
+        int month "Not Null, 1-12"
+        int year "Not Null"
+        decimal base_salary "Not Null, From EMPLOYEES.salary"
+        decimal bonuses "Not Null, Default: 0"
+        decimal deductions "Not Null, Default: 0"
+        decimal net_salary "Not Null, Calculated: base + bonuses - deductions"
+        varchar status "ENUM: PENDING, PAID"
+        timestamp payment_date "Set when status = PAID"
+        timestamp processed_at "Auto-set on creation"
+    }
+    
+    %% Announcement Service Database
+    ANNOUNCEMENTS {
+        bigint id PK "Primary Key, Auto-increment"
+        bigint created_by FK "Not Null, References USERS.id"
+        varchar title "Not Null"
+        text content "Not Null"
+        varchar priority "ENUM: NORMAL, HIGH, URGENT"
+        timestamp created_at "Auto-set on creation"
+    }
+    
+    ANNOUNCEMENT_USERS {
+        bigint id PK "Primary Key, Auto-increment"
+        varchar email UK "Unique"
+        varchar role "ENUM: ADMIN, EMPLOYEE"
+    }
+    
+    %% Relationships - Logical (across microservices)
+    USERS ||--o| EMPLOYEES : "1 User can have 1 Employee record (user_id)"
+    EMPLOYEES ||--o{ ATTENDANCE : "1 Employee has many Attendance records (employee_id)"
+    EMPLOYEES ||--o{ LEAVES : "1 Employee has many Leave Requests (employee_id)"
+    EMPLOYEES ||--o{ PAYROLL : "1 Employee has many Payroll records (employee_id)"
+    USERS ||--o{ ANNOUNCEMENTS : "1 Admin User creates many Announcements (created_by)"
+    
+    %% Constraints and Business Rules
+    %% 1. USERS.email must be unique across the system
+    %% 2. EMPLOYEES.user_id links to USERS.id (logical FK)
+    %% 3. EMPLOYEES.employee_id is auto-generated and unique
+    %% 4. ATTENDANCE: One record per employee per date
+    %% 5. ATTENDANCE: clock_out_time must be > clock_in_time
+    %% 6. LEAVES: end_date must be >= start_date
+    %% 7. LEAVES: start_date cannot be in the past for new requests
+    %% 8. PAYROLL: Unique constraint on (employee_id, month, year)
+    %% 9. PAYROLL: net_salary = base_salary + bonuses - deductions
+    %% 10. ANNOUNCEMENTS: created_by links to USERS.id (logical FK)
