@@ -48,6 +48,7 @@ function AdminLeaves() {
                             <TableRow>
                                 <TableHead>Employee</TableHead>
                                 <TableHead>Type</TableHead>
+                                <TableHead>Reason</TableHead>
                                 <TableHead>Dates</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Actions</TableHead>
@@ -58,6 +59,7 @@ function AdminLeaves() {
                                 <TableRow key={l.id}>
                                     <TableCell>{l.employeeId}</TableCell>
                                     <TableCell>{l.type}</TableCell>
+                                    <TableCell>{l.reason}</TableCell>
                                     <TableCell>{l.startDate} - {l.endDate}</TableCell>
                                     <TableCell><Badge>{l.status}</Badge></TableCell>
                                     <TableCell>

@@ -71,7 +71,7 @@ export function Sidebar() {
       <div className="px-3 py-2 flex-1">
         <Link href="/dashboard" className="flex items-center pl-3 mb-14">
             <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-indigo-600">
-                Nexus<span className="text-foreground">HR</span>
+                Spring<span className="text-foreground">HR</span>
             </h1>
         </Link>
         <div className="space-y-1">
