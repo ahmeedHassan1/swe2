@@ -56,6 +56,7 @@ public class AuthService {
         response.setEmail(user.getEmail());
         response.setRole(user.getRole());
         response.setExpiresIn(86400000L); // 24 hours
+        response.setUserId(user.getId());
         return response;
     }
 }

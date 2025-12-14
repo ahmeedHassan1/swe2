@@ -1,6 +1,7 @@
 package com.attendance.employee.common.aspect;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -11,8 +12,8 @@ import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
-@Slf4j
 public class SecurityAspect {
+    private static final Logger log = LoggerFactory.getLogger(SecurityAspect.class);
     
     @Before("@annotation(com.attendance.employee.common.annotation.AdminOnly)")
     public void checkAdminAccess(JoinPoint joinPoint) {

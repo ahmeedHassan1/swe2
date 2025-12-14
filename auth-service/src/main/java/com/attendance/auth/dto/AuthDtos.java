@@ -47,5 +47,6 @@ public class AuthDtos {
         private String email;
         private Role role;
         private Long expiresIn;
+        private Long userId;
     }
 }

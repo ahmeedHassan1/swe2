@@ -1,6 +1,5 @@
 package com.attendance.announcement.dto;
 
-import com.attendance.announcement.entity.NotificationType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -14,17 +13,17 @@ public class AnnouncementDtos {
         @NotBlank
         private String title;
         @NotBlank
-        private String message;
+        private String content;
         @NotNull
-        private NotificationType type;
+        private String priority;
     }
 
     @Data
     public static class AnnouncementResponse {
         private Long id;
         private String title;
-        private String message;
-        private NotificationType type;
+        private String content;
+        private String priority;
         private LocalDateTime createdAt;
     }
 }

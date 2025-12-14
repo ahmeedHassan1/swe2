@@ -35,6 +35,11 @@ public class EmployeeController {
         // Ideally should check principal vs requested ID logic here but keeping simple for now
         return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
+
+    @GetMapping("/by-user/{userId}")
+    public ResponseEntity<EmployeeResponse> getEmployeeByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(employeeService.getEmployeeByUserId(userId));
+    }
     
     @PutMapping("/{id}")
     @AdminOnly

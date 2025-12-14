@@ -24,11 +24,10 @@ public class Announcement {
     private String title;
 
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
-    private String message;
+    private String content;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "priority")
-    private NotificationType type;
+    private String priority;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

@@ -2,6 +2,7 @@ package com.attendance.employee.common.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -36,6 +37,7 @@ public class GlobalExceptionHandler {
     
     @Data
     @AllArgsConstructor
+    @NoArgsConstructor
     public static class ErrorResponse {
         private Integer status;
         private String message;

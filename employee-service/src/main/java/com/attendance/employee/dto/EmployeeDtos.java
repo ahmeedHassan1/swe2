@@ -37,6 +37,20 @@ public class EmployeeDtos {
         
         @NotNull
         private Long userId;
+
+        public String getEmail() { return email; }
+        public String getFirstName() { return firstName; }
+        public String getLastName() { return lastName; }
+        public String getPhone() { return phone; }
+        public String getAddress() { return address; }
+        public String getDepartment() { return department; }
+        public String getPosition() { return position; }
+        public LocalDate getJoinDate() { return joinDate; }
+        public java.math.BigDecimal getSalary() { return salary; }
+        public Long getUserId() { return userId; }
+        
+        public void setEmail(String email) { this.email = email; }
+        public void setUserId(Long userId) { this.userId = userId; }
     }
 
     @Data

@@ -40,6 +40,12 @@ public class EmployeeService {
             .orElseThrow(() -> new RuntimeException("Employee not found"));
         return employeeMapper.toResponse(employee);
     }
+
+    public EmployeeResponse getEmployeeByUserId(Long userId) {
+        Employee employee = employeeRepository.findByUserId(userId)
+            .orElseThrow(() -> new RuntimeException("Employee not found for User ID: " + userId));
+        return employeeMapper.toResponse(employee);
+    }
     
     @Transactional
     public EmployeeResponse updateEmployee(Long id, EmployeeRequest request) {
@@ -59,10 +65,5 @@ public class EmployeeService {
         employeeRepository.deleteById(id);
     }
     
-    @Transactional(readOnly = true)
-    public EmployeeResponse getEmployeeByUserId(Long userId) {
-        Employee employee = employeeRepository.findByUserId(userId)
-            .orElseThrow(() -> new RuntimeException("Employee not found for user id: " + userId));
-        return employeeMapper.toResponse(employee);
-    }
+
 }
