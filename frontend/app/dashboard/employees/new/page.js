@@ -29,9 +29,12 @@ export default function NewEmployeePage() {
     setLoading(true);
 
     try {
-      // First create user account
-      const userRes = await fetchWithAuth("/auth/register", {
+      // Create user account using regular fetch (no auth needed for register)
+      const userRes = await fetch("/api/auth/register", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
@@ -40,39 +43,58 @@ export default function NewEmployeePage() {
       });
 
       if (!userRes.ok) {
-        alert("Failed to create user account");
+        const error = await userRes.text();
+        alert(`Failed to create user account: ${error}`);
         setLoading(false);
         return;
       }
 
       const userData = await userRes.json();
+      console.log("User registration response:", userData);
 
       // Then create employee record
+      const employeeData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        department: formData.department,
+        position: formData.position,
+        joinDate: formData.joinDate,
+        salary: parseFloat(formData.salary),
+        userId: userData.userId || userData.id || userData.user?.id
+      };
+      
+      console.log("Creating employee with data:", employeeData);
+      
       const empRes = await fetchWithAuth("/employees", {
         method: "POST",
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          address: formData.address,
-          department: formData.department,
-          position: formData.position,
-          joinDate: formData.joinDate,
-          salary: parseFloat(formData.salary),
-          userId: userData.id
-        })
+        body: JSON.stringify(employeeData)
       });
 
       if (empRes.ok) {
         alert("Employee added successfully!");
         router.push("/dashboard/employees");
       } else {
-        alert("Failed to create employee record");
+        const errorText = await empRes.text();
+        console.error("Employee creation failed:", errorText);
+        
+        // Try to parse error message from JSON response
+        let errorMessage = "Failed to create employee record";
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorMessage;
+        } catch (e) {
+          // If not JSON, use the text as is
+          errorMessage = errorText || errorMessage;
+        }
+        
+        alert(errorMessage);
       }
     } catch (error) {
       console.error("Error adding employee:", error);
-      alert("An error occurred");
+      alert(`An error occurred: ${error.message}`);
     } finally {
       setLoading(false);
     }

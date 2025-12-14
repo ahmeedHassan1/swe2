@@ -32,26 +32,57 @@ function AdminPayroll() {
             const empRes = await fetchWithAuth("/employees").then(r => r.json());
             const employees = empRes.content || [];
             
+            let successCount = 0;
+            let skipCount = 0;
+            let errorCount = 0;
+            const errors = [];
+            
             // Process payroll for each employee
             for (const emp of employees) {
-                await fetchWithAuth("/payroll", {
-                    method: 'POST',
-                    body: JSON.stringify({ 
-                        employeeId: emp.id,
-                        month: parseInt(month),
-                        year: parseInt(year),
-                        baseSalary: emp.salary,
-                        bonuses: 0,
-                        deductions: 0
-                    })
-                });
+                try {
+                    const res = await fetchWithAuth("/payroll", {
+                        method: 'POST',
+                        body: JSON.stringify({ 
+                            employeeId: emp.id,
+                            month: parseInt(month),
+                            year: parseInt(year),
+                            baseSalary: emp.salary,
+                            bonuses: 0,
+                            deductions: 0
+                        })
+                    });
+                    
+                    if (res.ok) {
+                        successCount++;
+                    } else {
+                        const errorText = await res.text();
+                        if (errorText.includes("already processed")) {
+                            skipCount++;
+                        } else {
+                            errorCount++;
+                            errors.push(`${emp.firstName} ${emp.lastName}: ${errorText}`);
+                        }
+                    }
+                } catch (err) {
+                    errorCount++;
+                    errors.push(`${emp.firstName} ${emp.lastName}: ${err.message}`);
+                }
             }
             
-            alert("Payroll processed successfully for all employees");
+            // Show summary
+            let message = `Payroll Processing Complete:\n`;
+            message += `✓ Processed: ${successCount}\n`;
+            if (skipCount > 0) message += `⊘ Already processed: ${skipCount}\n`;
+            if (errorCount > 0) {
+                message += `✗ Errors: ${errorCount}\n\n`;
+                message += errors.join('\n');
+            }
+            
+            alert(message);
             fetchPayroll();
         } catch (error) {
             console.error("Failed to process payroll:", error);
-            alert("Failed to process payroll");
+            alert(`Failed to process payroll: ${error.message}`);
         }
     };
 

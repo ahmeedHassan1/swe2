@@ -23,6 +23,12 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
     
+    @PostMapping("/admin/register")
+    public ResponseEntity<AuthResponse> adminRegister(@RequestBody RegisterRequest request) {
+        // This endpoint is for admins to create new employee accounts
+        return ResponseEntity.ok(authService.register(request));
+    }
+    
     @GetMapping("/validate")
     public ResponseEntity<String> validateToken(@RequestParam("token") String token) {
         authService.validateToken(token);
