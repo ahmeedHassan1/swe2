@@ -42,7 +42,7 @@ export default function LoginPage() {
               <ShieldCheck size={28} />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-indigo-600">Welcome Back</CardTitle>
+          <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-primary to-indigo-600">Welcome Back</CardTitle>
           <CardDescription className="text-base">
             Sign in to access your dashboard
           </CardDescription>
