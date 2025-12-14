@@ -173,9 +173,9 @@ INSERT INTO leaves (employee_id, leave_type, start_date, end_date, reason, statu
 SELECT setval('leaves_id_seq', (SELECT MAX(id) FROM leaves));
 
 -- ============================================================================
--- PAYROLL DATA (Last 3 months)
+-- PAYROLL DATA (Last 2 months - excluding current month)
 -- ============================================================================
--- Generate payroll for the last 3 months
+-- Generate payroll for the last 2 months (excluding current month)
 DO $$
 DECLARE
     emp_record RECORD;
@@ -189,7 +189,7 @@ DECLARE
     bonus_amount DECIMAL(10, 2);
 BEGIN
     FOR emp_record IN SELECT id, salary FROM employees WHERE id > 2 LOOP
-        FOR month_offset IN 0..2 LOOP
+        FOR month_offset IN 1..2 LOOP
             payroll_month := EXTRACT(MONTH FROM CURRENT_DATE - (month_offset || ' months')::INTERVAL);
             payroll_year := EXTRACT(YEAR FROM CURRENT_DATE - (month_offset || ' months')::INTERVAL);
             
